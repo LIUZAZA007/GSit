@@ -24,9 +24,26 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 public class PlayerSitEventHandler implements Listener {
 
     private final GSitMain gSitMain;
+    private final boolean canvasHandlerActive;
 
     public PlayerSitEventHandler(GSitMain gSitMain) {
         this.gSitMain = gSitMain;
+        this.canvasHandlerActive = tryRegisterCanvasHandler();
+    }
+
+    private boolean tryRegisterCanvasHandler() {
+        try {
+            Class.forName("io.canvasmc.canvas.event.EntityPostTeleportAsyncEvent");
+        } catch(ClassNotFoundException | LinkageError e) {
+            return false;
+        }
+        try {
+            Bukkit.getPluginManager().registerEvents(new CanvasPlayerSitEventHandler(gSitMain), gSitMain);
+            return true;
+        } catch(Throwable t) {
+            gSitMain.getLogger().warning("Canvas teleport events detected but handler registration failed: " + t.getMessage());
+            return false;
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -46,7 +63,28 @@ public class PlayerSitEventHandler implements Listener {
     public void playerQuitEvent(PlayerQuitEvent event) { gSitMain.getPlayerSitService().stopPlayerSit(event.getPlayer(), StopReason.DISCONNECT); }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-    public void playerTeleportEvent(PlayerTeleportEvent event) { gSitMain.getPlayerSitService().stopPlayerSit(event.getPlayer(), StopReason.TELEPORT); }
+    public void playerTeleportEvent(PlayerTeleportEvent event) {
+        if(canvasHandlerActive) return;
+
+        Player player = event.getPlayer();
+        PlayerSitService service = gSitMain.getPlayerSitService();
+
+        if(service.isPlayerBottomOfPlayerSitStack(player)) {
+            if(service.isPlayerTopOfPlayerSitStack(player)) {
+                service.stopPlayerSit(player, StopReason.TELEPORT, false, true, true);
+            }
+
+            gSitMain.getTaskService().runDelayed(() -> {
+                if(!player.isValid()) return;
+                if(!service.isPlayerBottomOfPlayerSitStack(player)) return;
+                if(!player.getPassengers().isEmpty()) return;
+                service.stopPlayerSit(player, StopReason.TELEPORT, true, false, false);
+            }, player, 3);
+            return;
+        }
+
+        service.stopPlayerSit(player, StopReason.TELEPORT);
+    }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void entityDamageEvent(EntityDamageEvent event) { if(event.getCause() == EntityDamageEvent.DamageCause.FALL && event.getEntity() instanceof LivingEntity && event.getEntity().getVehicle() != null && event.getEntity().getVehicle().getScoreboardTags().contains(PlayerSitService.PLAYERSIT_ENTITY_TAG)) event.setCancelled(true); }

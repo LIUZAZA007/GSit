@@ -8,6 +8,12 @@ dependencies {
     paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
 }
 
+configurations {
+    compileClasspath {
+        exclude(group = "io.netty", module = "netty-transport-native-epoll")
+    }
+}
+
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.REOBF_PRODUCTION
 
 java {

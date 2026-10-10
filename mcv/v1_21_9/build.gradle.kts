@@ -7,6 +7,8 @@ dependencies {
     compileOnly(project(":core"))
     paperweight.paperDevBundle("1.21.10-R0.1-SNAPSHOT")
     compileOnly("net.kyori:adventure-text-serializer-ansi:4.26.1")
+    testCompileOnly("net.kyori:adventure-text-serializer-ansi:4.26.1")
+    testRuntimeOnly("net.kyori:adventure-text-serializer-ansi:4.26.1")
 }
 
 paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.REOBF_PRODUCTION

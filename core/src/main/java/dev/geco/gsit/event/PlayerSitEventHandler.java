@@ -68,21 +68,6 @@ public class PlayerSitEventHandler implements Listener {
 
         Player player = event.getPlayer();
         PlayerSitService service = gSitMain.getPlayerSitService();
-
-        if(service.isPlayerBottomOfPlayerSitStack(player)) {
-            if(service.isPlayerTopOfPlayerSitStack(player)) {
-                service.stopPlayerSit(player, StopReason.TELEPORT, false, true, true);
-            }
-
-            gSitMain.getTaskService().runDelayed(() -> {
-                if(!player.isValid()) return;
-                if(!service.isPlayerBottomOfPlayerSitStack(player)) return;
-                if(!player.getPassengers().isEmpty()) return;
-                service.stopPlayerSit(player, StopReason.TELEPORT, true, false, false);
-            }, player, 3);
-            return;
-        }
-
         service.stopPlayerSit(player, StopReason.TELEPORT);
     }
 
